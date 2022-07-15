@@ -1,0 +1,39 @@
+{
+  "name": "telegramcasetask",
+  "version": "1.0.0",
+  "description": "Бот для модерации дискорд сервера EZ",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/debug": "^4.1.7",
+    "@typescript-eslint/eslint-plugin": "^5.27.1",
+    "eslint": "^8.17.0",
+    "nodemon": "^2.0.15"
+  },
+  "scripts": {
+    "start": "cd ./dist && node --trace-uncaught ./Main.js",
+    "dev_build": "rimraf ./dist && swc ./src -d ./dist --copy-files",
+    "production_build": "rimraf ./dist && swc -C minify=true ./src -d ./dist --copy-files",
+    "check_errs": "tsc --project tsconfig.json --noEmit",
+    "lint": "npx eslint --ext .ts,.js src --fix",
+    "launch_nodemon": "nodemon --watch \"./src/**\" --ext \"ts,json\" --exec \"npm run check_errs && npm run lint && npm run dev_build && npm run start\"",
+    "dev": "npm run launch_nodemon",
+    "production": "npm run check_errs && npm run production_build && npm run start listener=true"
+  },
+  "dependencies": {
+    "@swc/cli": "^0.1.55",
+    "@swc/core": "^1.2.146",
+    "@swc/helpers": "^0.3.6",
+    "eslint-plugin-import": "^2.26.0",
+    "fs": "*",
+    "grammy": "^1.9.1",
+    "mongodb": "^4.8.0",
+    "node-fetch": "^3.2.8",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.5.5"
+  },
+  "author": "loli_knight",
+  "license": "ISC",
+  "prettier": {
+    "singleQuote": true
+  }
+}
