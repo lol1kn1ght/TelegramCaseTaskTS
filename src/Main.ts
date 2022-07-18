@@ -1,8 +1,7 @@
 import { Bot, Context } from 'grammy';
-import { token , mongo as mongo_config } from './config/constants.json';
+import { token, mongo as mongo_config } from './config/constants.json';
 import { MongoClient } from 'mongodb';
 import { question_data_type, answer_type } from './types';
-
 
 let url: string | undefined;
 const { auth, user, pass, ip, port, db } = mongo_config;
@@ -104,6 +103,8 @@ const mongo = new MongoClient(url);
     const replied_message = message.update.message.reply_to_message;
     const message_content = message.update.message.text;
     if (!message_content) return;
+
+    check_reply(message);
 
     (() => {
       if (replied_message) return;
