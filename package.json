@@ -7,7 +7,8 @@
     "@types/debug": "^4.1.7",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
     "eslint": "^8.17.0",
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "typescript": "^4.7.4"
   },
   "scripts": {
     "start": "cd ./dist && node --trace-uncaught ./Main.js",
@@ -23,13 +24,13 @@
     "@swc/cli": "^0.1.55",
     "@swc/core": "^1.2.146",
     "@swc/helpers": "^0.3.6",
+    "@types/node-telegram-bot-api": "^0.57.1",
     "eslint-plugin-import": "^2.26.0",
     "fs": "*",
-    "grammy": "^1.9.1",
     "mongodb": "^4.8.0",
     "node-fetch": "^3.2.8",
-    "rimraf": "^3.0.2",
-    "typescript": "^4.5.5"
+    "node-telegram-bot-api": "^0.58.0",
+    "rimraf": "^3.0.2"
   },
   "author": "loli_knight",
   "license": "ISC",

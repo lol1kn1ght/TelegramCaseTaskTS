@@ -9,4 +9,13 @@ export type question_data_type = {
 export type answer_type = {
   content: string;
   rating: number;
+  chat_id: number;
+};
+
+export type mongo_url_type = {
+  url: string;
+  db: string;
+  ip: string;
+  pass: string;
+  port: number;
 };

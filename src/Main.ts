@@ -1,132 +1,59 @@
-import { Bot, Context } from 'grammy';
+import Bot from 'node-telegram-bot-api';
 import { token, mongo as mongo_config } from './config/constants.json';
 import { MongoClient } from 'mongodb';
-import { question_data_type, answer_type } from './types';
+import { mongo_url_type } from './types';
+import { questions_manager } from './questions';
 
-let url: string | undefined;
-const { auth, user, pass, ip, port, db } = mongo_config;
-if (auth) url = `mongodb://${user}:${pass}@${ip}:${port}/${db}`;
-else url = 'mongodb://localhost:27017';
+export const client = new Bot(token);
 
-const mongo = new MongoClient(url);
-(async () => {
-  await mongo.connect();
-  console.log('Бд коннектнута');
+class bot_builder {
+  mongo = new MongoClient(this.get_mongo_connection_url().url);
+  client = client;
+  questions_manager = new questions_manager(this.mongo.db('questions'));
 
-  const client = new Bot(token);
-  const db = mongo.db('questions');
-  const questions_collection = db.collection('list');
+  constructor() {
+    this.start();
+  }
 
-  const questions = [
-    'кто',
-    'что',
-    'какой',
-    'чей',
-    'который',
-    'сколько',
-    'когда',
-    'где',
-    'куда',
-    'как',
-    'откуда',
-    'почему',
-    'зачем',
-  ];
-  const word_ends = ['?', '.', '!'];
+  async start() {
+    await this.connect_mongo();
+    await this.bind_event();
 
-  function get_question(content: string) {
-    const words_arr = content.split(' ');
-    let is_question = false;
-    const result_question: string[] = [];
+    await this.login();
+  }
 
-    for (const word of words_arr) {
-      if (questions.includes(word.toLocaleLowerCase()) && !is_question)
-        is_question = true;
+  async connect_mongo() {
+    await this.mongo.connect();
+    console.log('Бд коннектнута');
+  }
 
-      if (word_ends.includes(word[word.length - 1]) && is_question) {
-        const edited_word = word
-          .split('')
-          .filter((char) => !word_ends.includes(char))
-          .join('');
+  login() {
+    this.client.startPolling();
+    console.log('Бот авторизован');
+  }
 
-        result_question.push(edited_word.toLowerCase());
-        return result_question;
-      }
-      if (is_question) result_question.push(word.toLowerCase());
+  bind_event() {
+    this.client.onText(/\\test/, (ctx) => {
+      console.log('cmd');
+    });
+
+    this.client.on('message', (ctx) => {
+      console.log('Новое сообщение');
+
+      this.questions_manager.check_message(ctx);
+    });
+  }
+
+  private get_mongo_connection_url(): mongo_url_type {
+    if (mongo_config.auth) {
+      const { user, pass, ip, port, db } = mongo_config;
+      const url = `mongodb://${user}:${pass}@${ip}:${port}/${db}`;
+      return { url, db, ip, pass, port };
+    } else {
+      const url = 'mongodb://localhost:27017';
+      return { url, db: 'gtaEZ', ip: 'localhost', pass: '', port: 27017 };
     }
-
-    if (is_question) return result_question;
-    else return is_question;
   }
+}
 
-  async function get_data(search_filter: Partial<question_data_type>) {
-    const question_data =
-      await questions_collection.findOne<question_data_type>(search_filter);
-
-    return question_data;
-  }
-
-  async function check_reply(message: Context) {
-    const replied_message = message.message;
-    const message_content = message.message?.text;
-    console.log(replied_message);
-
-    if (!replied_message || !message_content) return;
-    const replied_question = await get_data({
-      chat_id: replied_message.chat.id,
-      message_id: replied_message.message_id,
-    });
-    if (!replied_question) return;
-
-    replied_question.answers.push({
-      content: message_content,
-      rating: 0,
-    });
-    if (!replied_question.answered) replied_question.answered = true;
-
-    questions_collection.updateOne(
-      {
-        chat_id: replied_message.chat.id,
-        message_id: replied_message.message_id,
-      },
-      {
-        $set: {
-          answers: replied_question.answers,
-          answered: replied_question.answered,
-        },
-      }
-    );
-    message.reply('Записал ваш ответ на вопрос!');
-  }
-
-  client.on('message', async (message) => {
-    const replied_message = message.update.message.reply_to_message;
-    const message_content = message.update.message.text;
-    if (!message_content) return;
-
-    check_reply(message);
-
-    (() => {
-      if (replied_message) return;
-      const message_question = get_question(message_content);
-      console.log(message_question);
-
-      if (message_question) {
-        const question: question_data_type = {
-          answered: false,
-          answers: [],
-          message_id: message.update.message.message_id,
-          question: message_question.join(' '),
-          chat_id: message.update.message.chat.id,
-        };
-
-        questions_collection.insertOne(question);
-        message.reply('Ваш вопрос принят');
-        return;
-      }
-    })();
-  });
-
-  client.start();
-  console.log('Бот авторизован');
-})();
+new bot_builder();
