@@ -1,11 +1,13 @@
-import { Message } from 'node-telegram-bot-api';
-import { client } from './Main';
+import { Message, InlineKeyboardButton } from 'node-telegram-bot-api';
+import { client, buttons_manager } from './Main';
 import { Db } from 'mongodb';
-import { question_data_type } from './types';
+import { question_data_type, awaiter_filter } from './types';
 
 export class questions_manager {
   private messages_awaiter: {
-    [k: number]: number;
+    [k: number]: {
+      [k: number]: number;
+    };
   } = {};
   private message: Message | undefined;
   constructor(private db: Db) {}
@@ -93,7 +95,8 @@ export class questions_manager {
     ];
     const word_ends = ['?', '.', '!'];
 
-    for (const word of content_arr) {
+    for (let word of content_arr) {
+      word = word.toLowerCase();
       if (anchor_words.includes(word)) is_question = true;
 
       if (is_question) {
@@ -108,7 +111,8 @@ export class questions_manager {
 
   async get_answers(question_data: question_data_type) {
     if (!this.message) return;
-    const { answers } = question_data;
+    let { answers } = question_data;
+    answers = answers.sort((a, b) => b.rating - a.rating);
 
     if (!answers[0]) {
       client?.sendMessage(
@@ -119,13 +123,28 @@ export class questions_manager {
     }
 
     let answers_content = '';
+    let position = 1;
+    const buttons: InlineKeyboardButton[][] = [[]];
 
     for (const answer of answers) {
-      answers_content += `Ответ: ${answer.content}\nПопулярность: ${answer.rating}\n\n`;
+      answers_content += `#${position} Ответ: ${answer.content}\nПопулярность: ${answer.rating}\n\n`;
+
+      buttons[0].push({
+        text: `Вопрос ${position++}`,
+        callback_data: `${this.message.chat.id}_${
+          this.message.from?.id
+        }_${answers.indexOf(answer)}`,
+      });
     }
 
-    console.log(answers_content);
-    client.sendMessage(this.message.chat.id, answers_content);
+    answers_content = `На ваш вопрос были найдены такие ответы:\n\n${answers_content}Пожалуйста, оцените наиболее подходящий, на ваш взгляд, ответ через кнопки ниже чтобы мы смогли улучшить подбор ответов для вас и других людей :)`;
+    // client.sendMessage(this.message.chat.id, answers_content);
+    buttons_manager.send_buttons({
+      buttons: buttons,
+      content: answers_content,
+      message: this.message,
+      question_data,
+    });
   }
 
   async write_answer(message: Message, question_data: question_data_type) {
@@ -186,5 +205,9 @@ export class questions_manager {
     questions_collection.updateOne(filter, {
       $set: data,
     });
+  }
+
+  async await_message(chat_id: number, user_id: number) {
+    this.messages_awaiter[chat_id][user_id] = new Date().getTime() + 180000;
   }
 }
