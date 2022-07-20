@@ -39,8 +39,6 @@ class bot_builder {
 
   bind_event() {
     this.client.on('message', async (ctx) => {
-      console.log('Тест');
-
       // const test = await this.mongo
       //   .db('questions')
       //   .collection('list')

@@ -137,8 +137,8 @@ export class questions_manager {
       });
     }
 
-    answers_content = `На ваш вопрос были найдены такие ответы:\n\n${answers_content}Пожалуйста, оцените наиболее подходящий, на ваш взгляд, ответ через кнопки ниже чтобы мы смогли улучшить подбор ответов для вас и других людей :)`;
-    // client.sendMessage(this.message.chat.id, answers_content);
+    answers_content = `На ваш вопрос были найдены такие ответы:\n\n${answers_content}Пожалуйста, оцените наиболее подходящий, на ваш взгляд, ответ через кнопки ниже, чтобы мы смогли улучшить подбор ответов для вас и других людей :)`;
+
     buttons_manager.send_buttons({
       buttons: buttons,
       content: answers_content,
@@ -157,12 +157,21 @@ export class questions_manager {
       (answer) => answer.content.toLowerCase() === message.text?.toLowerCase()
     )[0];
 
-    if (!same_answer)
-      question_data.answers.push({
-        content: message.text,
-        rating: 0,
-        chat_id: message.chat.id,
-      });
+    if (same_answer) {
+      client.sendMessage(
+        message.chat.id,
+        'Такой ответ уже существует в базе данных',
+        {
+          reply_to_message_id: message.message_id,
+        }
+      );
+      return;
+    }
+    question_data.answers.push({
+      content: message.text,
+      rating: 0,
+      chat_id: message.chat.id,
+    });
     question_data.answered = true;
     await questions_collection.updateOne(
       {
