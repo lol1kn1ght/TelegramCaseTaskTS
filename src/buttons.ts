@@ -45,9 +45,15 @@ export class buttons {
       const awaited_info = messages_list[chat_id][user_id];
 
       if (!awaited_info) {
-        client.editMessageReplyMarkup({
-          inline_keyboard: [],
-        });
+        client.editMessageReplyMarkup(
+          {
+            inline_keyboard: [],
+          },
+          {
+            message_id: callback.message?.message_id,
+            chat_id: callback.message?.chat.id,
+          }
+        );
 
         return;
       }
