@@ -1,6 +1,6 @@
-import Bot from 'node-telegram-bot-api';
+import Bot, { Message } from 'node-telegram-bot-api';
 import { token, mongo as mongo_config } from './config/constants.json';
-import { Db, MongoClient } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import { mongo_url_type, messages_list_type } from './types';
 import { questions_manager } from './questions';
 import { buttons } from './buttons';
@@ -39,17 +39,6 @@ class bot_builder {
 
   bind_event() {
     this.client.on('message', async (ctx) => {
-      // const test = await this.mongo
-      //   .db('questions')
-      //   .collection('list')
-      //   .find({
-      //     $text: {
-      //       $search: 'белгород',
-      //     },
-      //   })
-      //   .toArray();
-      // console.log(test);
-
       this.questions_manager.check_message(ctx);
     });
   }
