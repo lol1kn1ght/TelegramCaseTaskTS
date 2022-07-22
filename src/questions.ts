@@ -2,7 +2,9 @@ import { Message, InlineKeyboardButton } from 'node-telegram-bot-api';
 import { client, buttons_manager } from './Main';
 import { Db } from 'mongodb';
 import { question_data_type, awaiter_filter } from './types';
+import { timer } from './timer';
 
+const timer_deleter = new timer();
 export class questions_manager {
   private messages_awaiter: {
     [k: number]: {
@@ -18,11 +20,11 @@ export class questions_manager {
     this.message = message;
     const replied_message = message.reply_to_message;
     if (!message.text) return;
-    const question = this.get_question(message.text);
+    const question = await this.get_question(message);
 
     if (question && !replied_message) {
       const question_data = await this.get_data({
-        question: question.toLowerCase(),
+        question: question.split(' '),
       });
       if (!question_data) {
         this.write_question(message);
@@ -34,7 +36,7 @@ export class questions_manager {
     }
 
     if (replied_message) {
-      const replied_question = this.get_question(replied_message.text!);
+      const replied_question = await this.get_question(replied_message);
       const question_data =
         await questions_collection.findOne<question_data_type>({
           $or: [
@@ -49,33 +51,39 @@ export class questions_manager {
         });
 
       if (!question_data) return;
-      await this.write_answer(message, question_data); // бот лох!
+      await this.write_answer(message, question_data);
       return;
     }
   }
 
   async write_question(message: Message) {
     if (!message || !message.text) return;
-    const question = this.get_question(message.text); //скатина
+    const question = await this.get_question(message);
     if (!question) return;
-    const questions_collection = this.db.collection('list'); //работай!
+    const questions_collection = this.db.collection('list');
+    const result_question = question.toLowerCase().split(' ');
     const question_data: question_data_type = {
       //пидор
       answered: false,
       answers: [],
       chat_id: message.chat.id,
       message_id: message.message_id,
-      question: question.toLowerCase(),
+      question: result_question,
     };
     questions_collection.insertOne(question_data);
     client.sendMessage(
       message.chat.id,
-      'К сожалению у меня нет ответа на этот вопрос, но я записал его в базу данных и буду собирать ответы на него!\n\nДобавить свой ответ на вопрос можно просто свайпнуть сообщение с вопросом влево и написать на него ваш ответ'
+      'К сожалению у меня нет ответа на этот вопрос, но я записал его в базу данных и буду собирать ответы на него!\n\nДобавить свой ответ на вопрос можно просто свайпнуть сообщение с вопросом влево и написать на него ваш ответ',
+      {
+        reply_to_message_id: message.message_id,
+      }
     );
   }
 
-  get_question(content: string): string | undefined {
-    let is_question = false;
+  async get_question(message: Message): Promise<string | undefined> {
+    const content = message.text;
+    if (!content) return;
+    let has_anchor = false;
     const content_arr = content.split(' ');
     const result_question = [];
     const anchor_words = [
@@ -97,16 +105,35 @@ export class questions_manager {
 
     for (let word of content_arr) {
       word = word.toLowerCase();
-      if (anchor_words.includes(word)) is_question = true;
+      if (anchor_words.includes(word)) has_anchor = true;
 
-      if (is_question) {
-        const edited_word = word.replace(/(\?|!|\.|,)/gi, '');
+      if (has_anchor) {
+        const edited_word = word.replace(/(\?|!|\.)/gi, '');
         result_question.push(edited_word);
         if (word_ends.includes(word[word.length - 1])) break;
       }
     }
 
-    return result_question[0] ? result_question.join(' ') : undefined;
+    if (has_anchor && content.includes('?')) {
+      if (!content.startsWith('вопрос')) {
+        let merged_question = result_question.join(' ');
+        if (merged_question[merged_question.length - 1] != '?')
+          merged_question += '?';
+        const notif_message = await client.sendMessage(
+          message.chat.id,
+          `Приветствую! Если вы хотите задать мне вопрос, то напишите ваш вопрос заново, но в начале укажите слово "вопрос". Данное сообщение удалится через 5 минут.\n\n Пример вопроса:\nвопрос ${merged_question}`,
+          {
+            reply_to_message_id: message.message_id,
+          }
+        );
+
+        timer_deleter.delete(notif_message, 300000);
+        return undefined;
+      }
+
+      return result_question[0] ? result_question.join(' ') : undefined;
+    }
+    return undefined;
   }
 
   async get_answers(question_data: question_data_type) {

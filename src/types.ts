@@ -1,7 +1,7 @@
 import { Message } from 'node-telegram-bot-api';
 
 export type question_data_type = {
-  question: string;
+  question: string[];
   answers: answer_type[];
   answered: boolean;
   chat_id: number;

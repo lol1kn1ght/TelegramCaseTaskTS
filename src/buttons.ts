@@ -27,6 +27,8 @@ export class buttons {
 
   async bind_events() {
     client.on('callback_query', (callback) => {
+      console.log('aboba');
+
       const chat_id = callback.message?.chat.id;
       const from = callback.from;
       if (!from) return;
