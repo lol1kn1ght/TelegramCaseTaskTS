@@ -5,7 +5,7 @@ type timers_list_type = {
   [time: number]: Message;
 };
 
-const timers_list: timers_list_type = {};
+export const timers_list: timers_list_type = {};
 
 export class timer {
   constructor() {

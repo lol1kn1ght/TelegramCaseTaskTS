@@ -4,6 +4,8 @@ import { Db } from 'mongodb';
 import { question_data_type } from './types';
 import { timer } from './timer';
 
+let notified = false;
+
 const timer_deleter = new timer();
 export class questions_manager {
   private messages_awaiter: {
@@ -127,7 +129,8 @@ export class questions_manager {
           }
         );
 
-        timer_deleter.delete(notif_message, 300000);
+        notified = true;
+        if (!notified) timer_deleter.delete(notif_message, 300000);
         return undefined;
       }
 
