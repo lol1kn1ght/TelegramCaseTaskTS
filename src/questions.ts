@@ -24,7 +24,7 @@ export class questions_manager {
 
     if (question && !replied_message) {
       const question_data = await this.get_data({
-        question: question.split(' '),
+        question: question,
       });
       if (!question_data) {
         this.write_question(message);
