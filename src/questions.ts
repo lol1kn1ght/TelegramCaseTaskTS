@@ -160,7 +160,7 @@ export class questions_manager {
       answers_content += `#${position} Ответ: ${answer.content}\nПопулярность: ${answer.rating}\n\n`;
 
       buttons[0].push({
-        text: `Вопрос ${position++}`,
+        text: `Ответ ${position++}`,
         callback_data: `${this.message.chat.id}_${
           this.message.from?.id
         }_${answers.indexOf(answer)}`,
