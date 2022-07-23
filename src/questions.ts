@@ -81,7 +81,7 @@ export class questions_manager {
   }
 
   async get_question(message: Message): Promise<string | undefined> {
-    const content = message.text;
+    const content = message.text?.toLowerCase();
     if (!content) return;
     let has_anchor = false;
     const content_arr = content.split(' ');
