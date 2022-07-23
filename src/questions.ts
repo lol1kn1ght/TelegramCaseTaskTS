@@ -1,7 +1,7 @@
 import { Message, InlineKeyboardButton } from 'node-telegram-bot-api';
 import { client, buttons_manager } from './Main';
 import { Db } from 'mongodb';
-import { question_data_type, awaiter_filter } from './types';
+import { question_data_type } from './types';
 import { timer } from './timer';
 
 const timer_deleter = new timer();
@@ -61,7 +61,7 @@ export class questions_manager {
     const question = await this.get_question(message);
     if (!question) return;
     const questions_collection = this.db.collection('list');
-    const result_question = question.toLowerCase().split(' ');
+    const result_question = question.toLowerCase();
     const question_data: question_data_type = {
       //пидор
       answered: false,
